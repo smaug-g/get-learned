@@ -2,6 +2,8 @@ import os
 import cv2
 import numpy as np
 import pandas as pd
+from skimage import io, color, img_as_ubyte
+from skimage.feature import greycomatrix, greycoprops
 def preprocess_images(data_matrix, directory):
     """
     This function preprocesses the images refered to in the data matrix by loading them into a file.
@@ -78,3 +80,23 @@ def predictions_to_csv(predictions, fileName):
     labels = ['Id', 'Category']
     df = pd.DataFrame.from_records(enumerate(predictions), columns=labels)
     df.to_csv(fileName, mode='w', index=False)
+
+
+def extract_texture_features(img):
+    """
+    See https://stackoverflow.com/questions/40919936/calculating-entropy-from-glcm-of-an-image
+    :param img:
+    :return:
+    """
+    grayImg = img_as_ubyte(color.rgb2gray(img))
+    distances = [1, 2, 3]
+    angles = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
+    properties = ['energy', 'homogeneity']
+
+    glcm = greycomatrix(grayImg,
+                        distances=distances,
+                        angles=angles,
+                        symmetric=True,
+                        normed=True)
+
+    return np.hstack([greycoprops(glcm, prop).ravel() for prop in properties])
